@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bharat Benefit Finder 🇮🇳</title>
+<style>
+body{
+  margin:0;
+  font-family:Arial, sans-serif;
+  background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  min-height:100vh;
+  color:white;
+}
+.container{
+  width:95%;
+  max-width:700px;
+  background:rgba(255,255,255,0.08);
+  backdrop-filter:blur(15px);
+  padding:20px;
+  border-radius:20px;
+  box-shadow:0 20px 40px rgba(0,0,0,0.5);
+}
+h2{text-align:center;margin-bottom:10px;}
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+input, select{width:100%;padding:10px;margin:6px 0;border-radius:10px;border:none;outline:none;}
+button{width:100%;padding:10px;margin-top:8px;border:none;border-radius:10px;background:linear-gradient(45deg,#00c6ff,#0072ff);color:white;font-weight:bold;cursor:pointer;transition:0.3s;}
+button:hover{opacity:0.9;}
+.scheme{background:rgba(255,255,255,0.15);padding:15px;border-radius:12px;margin-top:12px;font-size:14px;transition:0.3s;}
+.scheme:hover{transform:scale(1.02);box-shadow:0 8px 15px rgba(0,0,0,0.3);}
+.badge{background:#00c6ff;padding:4px 8px;border-radius:20px;font-size:11px;}
+.search{padding:8px;border-radius:10px;border:none;width:100%;margin-top:10px;}
+.filter{padding:8px;border-radius:10px;border:none;width:48%;margin-top:10px;}
+.hidden{display:none;}
+.scheme-buttons{display:flex;justify-content:space-between;margin-top:10px;}
+.scheme-buttons button{width:48%;}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="top-bar">
+<h2>Bharat Benefit Finder 🇮🇳</h2>
+<select id="langSelect" onchange="changeLang()" style="width:auto;padding:5px 10px;">
+<option value="en">English</option>
+<option value="ta">தமிழ்</option>
+<option value="hi">हिन्दी</option>
+</select>
+</div>
+
+<div id="loginBox">
+<input type="text" id="mobile" placeholder="Enter Mobile Number">
+<div id="mobileError" style="color:red;font-size:12px;"></div>
+<button onclick="sendOTP()">Send OTP</button>
+</div>
+
+<div id="otpBox" class="hidden">
+<input type="text" id="otpInput" placeholder="Enter OTP">
+<button onclick="verifyOTP()">Verify OTP</button>
+</div>
+
+<div id="profileBox" class="hidden">
+<input type="number" id="age" placeholder="Age">
+<select id="gender">
+<option value="">Gender</option>
+<option value="male">Male</option>
+<option value="female">Female</option>
+</select>
+<select id="occupation">
+<option value="">Occupation</option>
+<option value="student">Student</option>
+<option value="farmer">Farmer</option>
+<option value="worker">Worker</option>
+<option value="business">Business</option>
+<option value="unemployed">Unemployed</option>
+</select>
+<select id="income">
+<option value="">Annual Income</option>
+<option value="ultra">< ₹1L</option>
+<option value="low">₹1L–3L</option>
+<option value="middle">₹3L–8L</option>
+<option value="high">₹8L+</option>
+</select>
+<select id="category">
+<option value="">Category</option>
+<option value="sc">SC</option>
+<option value="st">ST</option>
+<option value="obc">OBC</option>
+<option value="mbc">MBC</option>
+<option value="general">General</option>
+</select>
+<button onclick="findSchemes()">Find My Schemes</button>
+</div>
+
+<div id="resultBox" class="hidden">
+<div style="display:flex;justify-content:space-between;">
+<input type="text" id="searchInput" class="search" placeholder="Search scheme..." onkeyup="searchSchemes()">
+<select id="typeFilter" class="filter" onchange="filterSchemes()">
+<option value="">All Types</option>
+<option value="Central">Central</option>
+<option value="Tamil Nadu">Tamil Nadu</option>
+</select>
+</div>
+<div id="schemeCount"></div>
+<div id="schemeList"></div>
+<button onclick="goBack()">Back</button>
+</div>
+
+</div>
+
+<script>
+let generatedOTP="";
+let currentLang="en";
+let matchedSchemes=[];
+
+function sendOTP(){
+  let mobile=document.getElementById("mobile").value.trim();
+  let pattern=/^[6-9]\d{9}$/;
+  if(!pattern.test(mobile)){
+    document.getElementById("mobileError").innerText="Enter valid Indian mobile number";
+    return;
+  }
+  generatedOTP="123456";
+  alert("Demo OTP: 123456");
+  loginBox.classList.add("hidden");
+  otpBox.classList.remove("hidden");
+}
+
+function verifyOTP(){
+  if(otpInput.value!==generatedOTP){
+    alert("Invalid OTP");
+    return;
+  }
+  otpBox.classList.add("hidden");
+  profileBox.classList.remove("hidden");
+}
+
+let schemes=[
+{name:"PM-KISAN",type:"Central",check:u=>u.occupation==="farmer",details_en:"₹6000/year to farmers.",details_ta:"விவசாயிகளுக்கு வருடத்திற்கு ₹6000.",details_hi:"किसानों को ₹6000 प्रति वर्ष.",link:"https://pmkisan.gov.in"},
+{name:"Ayushman Bharat",type:"Central",check:u=>u.income==="ultra"||u.income==="low",details_en:"Free health insurance up to ₹5 lakh.",details_ta:"ஒரு குடும்பத்திற்கு ₹5 லட்சம் மருத்துவ காப்பீடு.",details_hi:"₹5 लाख तक मुफ्त स्वास्थ्य बीमा.",link:"https://pmjay.gov.in"},
+{name:"National Scholarship Portal",type:"Central",check:u=>u.occupation==="student",details_en:"Scholarships ₹10k–₹50k.",details_ta:"உதவித்தொகை ₹10k–₹50k.",details_hi:"छात्रवृत्ति ₹10k–₹50k.",link:"https://scholarships.gov.in"},
+{name:"PM Mudra Loan",type:"Central",check:u=>u.occupation==="business",details_en:"Loans up to ₹10L.",details_ta:"₹10 லட்சம் கடன்.",details_hi:"₹10 लाख तक ऋण.",link:"https://www.mudra.org.in"},
+// Add remaining schemlet schemes=[
+{name:"PM-KISAN",type:"Central",check:u=>u.occupation==="farmer",details_en:"₹6000/year to farmers.",details_ta:"விவசாயிகளுக்கு வருடத்திற்கு ₹6000.",details_hi:"किसानों को ₹6000 प्रति वर्ष.",link:"https://pmkisan.gov.in"},
+{name:"PM Fasal Bima Yojana",type:"Central",check:u=>u.occupation==="farmer",details_en:"Crop insurance for natural disasters.",details_ta:"இயற்கை பேரழிவுகளுக்கு பயிர் காப்பீடு.",details_hi:"प्राकृतिक आपदाओं के लिए फसल बीमा.",link:"https://pmfby.gov.in"},
+{name:"Soil Health Card",type:"Central",check:u=>u.occupation==="farmer",details_en:"Free soil testing report.",details_ta:"இலவச மண் பரிசோதனை அறிக்கை.",details_hi:"मुफ्त मिट्टी परीक्षण रिपोर्ट.",link:"https://soilhealth.dac.gov.in"},
+{name:"TN Uzhavar Security",type:"Tamil Nadu",check:u=>u.occupation==="farmer",details_en:"Monthly pension for farmers.",details_ta:"விவசாயிகளுக்கு மாதாந்திர ஓய்வூதியம்.",details_hi:"किसानों के लिए मासिक पेंशन.",link:"https://tnagrisnet.tn.gov.in"},
+{name:"Ayushman Bharat",type:"Central",check:u=>u.income==="ultra"||u.income==="low",details_en:"Free health insurance up to ₹5 lakh.",details_ta:"ஒரு குடும்பத்திற்கு ₹5 லட்சம் மருத்துவ காப்பீடு.",details_hi:"₹5 लाख तक मुफ्त स्वास्थ्य बीमा.",link:"https://pmjay.gov.in"},
+{name:"TN Chief Minister Health",type:"Tamil Nadu",check:u=>u.income==="ultra"||u.income==="low",details_en:"Health coverage for TN families.",details_ta:"தமிழ்நாடு குடும்பங்களுக்கு மருத்துவ காப்பீடு.",details_hi:"टीएन परिवारों के लिए स्वास्थ्य कवरेज.",link:"https://www.cmchistn.com"},
+{name:"National Scholarship Portal",type:"Central",check:u=>u.occupation==="student",details_en:"Scholarships ₹10k–₹50k.",details_ta:"உதவித்தொகை ₹10k–₹50k.",details_hi:"छात्रवृत्ति ₹10k–₹50k.",link:"https://scholarships.gov.in"},
+{name:"AICTE Pragati Scholarship",type:"Central",check:u=>u.occupation==="student"&&u.gender==="female",details_en:"₹50k/year for girl tech students.",details_ta:"பெண் தொழில்நுட்ப மாணவர்களுக்கு ₹50k.",details_hi:"लड़कियों के तकनीकी छात्रों के लिए ₹50k.",link:"https://www.aicte-india.org"},
+{name:"TN Free Laptop",type:"Tamil Nadu",check:u=>u.occupation==="student",details_en:"Free laptop for eligible students.",details_ta:"மாணவர்களுக்கு இலவச மடிக்கணினி.",details_hi:"छात्रों के लिए मुफ्त लैपटॉप.",link:"https://www.tn.gov.in"},
+{name:"INSPIRE Scholarship",type:"Central",check:u=>u.occupation==="student",details_en:"₹80k/year for science students.",details_ta:"அறிவியல் மாணவர்களுக்கு ₹80k.",details_hi:"विज्ञान छात्रों के लिए ₹80k.",link:"https://online-inspire.gov.in"},
+{name:"PM Mudra Loan",type:"Central",check:u=>u.occupation==="business",details_en:"Loans up to ₹10L.",details_ta:"₹10 லட்சம் கடன்.",details_hi:"₹10 लाख तक ऋण.",link:"https://www.mudra.org.in"},
+{name:"Stand-Up India",type:"Central",check:u=>u.occupation==="business",details_en:"Loans for SC/ST & women.",details_ta:"SC/ST மற்றும் பெண்களுக்கு கடன்.",details_hi:"SC/ST और महिलाओं के लिए ऋण.",link:"https://www.standupmitra.in"},
+{name:"PM SVANidhi",type:"Central",check:u=>u.occupation==="business",details_en:"₹10k working capital for street vendors.",details_ta:"தெரு வியாபாரிகளுக்கு ₹10k கடன்.",details_hi:"सड़क विक्रेताओं के लिए ₹10k.",link:"https://pmsvanidhi.mohua.gov.in"},
+{name:"TN MSME Capital Subsidy",type:"Tamil Nadu",check:u=>u.occupation==="business",details_en:"25% capital subsidy for small businesses.",details_ta:"சிறிய தொழில்களுக்கு 25% மூலதன உதவி.",details_hi:"छोटे व्यवसायों के लिए 25% पूंजी सब्सिडी.",link:"https://www.tn.gov.in"},
+{name:"Atal Pension Yojana",type:"Central",check:u=>u.age>=18&&u.age<=40,details_en:"₹1k–₹5k pension post 60.",details_ta:"60 வயதுக்குப் பின் ₹1k–₹5k ஓய்வூதியம்.",details_hi:"60 के बाद ₹1k–₹5k पेंशन.",link:"https://www.npscra.nsdl.co.in"},
+{name:"e-Shram",type:"Central",check:u=>u.occupation==="worker",details_en:"₹2L accidental insurance.",details_ta:"₹2L விபத்து காப்பீடு.",details_hi:"₹2L दुर्घटना बीमा.",link:"https://eshram.gov.in"},
+{name:"Skill India Mission",type:"Central",check:u=>u.occupation==="unemployed",details_en:"Free skill training.",details_ta:"இலவச திறன் பயிற்சி.",details_hi:"मुफ्त कौशल प्रशिक्षण.",link:"https://skillindia.gov.in"},
+{name:"TN Free Bus Travel Women",type:"Tamil Nadu",check:u=>u.gender==="female",details_en:"Women travel free in TN buses.",details_ta:"பெண்கள் இலவசமாக பயணிக்கலாம்.",details_hi:"महिलाएं मुफ्त यात्रा कर सकती हैं.",link:"https://www.tn.gov.in"},
+{name:"TN Marriage Assistance",type:"Tamil Nadu",check:u=>u.gender==="female"&&u.income==="ultra",details_en:"₹25k + gold coin for brides.",details_ta:"மணமக்களுக்கு ₹25k + தங்க நாணயம்.",details_hi:"दुल्हनों के लिए ₹25k + सोने का सिक्का.",link:"https://www.tn.gov.in"},
+{name:"PM Awas Yojana Urban",type:"Central",check:u=>u.income==="low",details_en:"Urban housing subsidy ₹2.5L.",details_ta:"நகர்ப்புற வீட்டு உதவி ₹2.5L.",details_hi:"शहरी आवास सहायता ₹2.5L.",link:"https://pmaymis.gov.in"},
+{name:"National Family Benefit",type:"Central",check:u=>u.income==="ultra",details_en:"₹20k one-time on death of earning member.",details_ta:"சம்பாதிக்க உறுப்பினர் மரணத்தில் ₹20k.",details_hi:"आय अर्जक की मृत्यु पर ₹20k एकमुश्त.",link:"https://www.esahai.gov.in"},
+{name:"TN Green House Scheme",type:"Tamil Nadu",check:u=>u.income==="ultra",details_en:"Free concrete houses for rural poor.",details_ta:"கிராமப்புற வறுமைக்குடிகளுக்கு இலவச வீட்டுகள்.",details_hi:"ग्रामीण गरीबों के लिए मुफ्त कंक्रीट घर.",link:"https://www.tn.gov.in"},
+{name:"Beti Bachao Beti Padhao",type:"Central",check:u=>u.gender==="female",details_en:"Promotes girl child education.",details_ta:"பெண் குழந்தை கல்வி முன்னேற்றம்.",details_hi:"लड़की शिक्षा को बढ़ावा.",link:"https://wcd.nic.in"},
+{name:"TN Amma Baby Kit",type:"Tamil Nadu",check:u=>u.gender==="female",details_en:"Free baby care kit for mothers.",details_ta:"தாய்களுக்கு இலவச குழந்தை பராமரிப்பு.",details_hi:"माताओं के लिए मुफ्त बेबी किट.",link:"https://www.tn.gov.in"},
+{name:"PM Matru Vandana Yojana",type:"Central",check:u=>u.gender==="female",details_en:"₹5000 maternity benefit.",details_ta:"₹5000 மாதப்பிறப்பு உதவி.",details_hi:"₹5000 मातृत्व लाभ.",link:"https://www.pmindia.gov.in"},
+// Continue adding more schemes (health, education, pension, women, business, farmer, state-specific)
+// Targeting 50–60 schemes total
+];
+
+function findSchemes(){
+  let user={
+    age:parseInt(age.value),
+    gender:gender.value,
+    occupation:occupation.value,
+    income:income.value,
+    category:category.value
+  };
+  matchedSchemes=schemes.filter(s=>s.check(user));
+  profileBox.classList.add("hidden");
+  resultBox.classList.remove("hidden");
+  renderSchemes(matchedSchemes);
+}
+
+function renderSchemes(list){
+  schemeCount.innerHTML="<b>Total Schemes: "+list.length+"</b>";
+  let html="";
+  list.forEach(s=>{
+    html+=`<div class="scheme">
+      <span class="badge">${s.type}</span><br><br>
+      <b>${s.name}</b><br><br>
+      ${currentLang==="en"?s.details_en:currentLang==="ta"?s.details_ta:s.details_hi}
+      <div class="scheme-buttons">
+        <a href="${s.link}" target="_blank"><button>Official Website</button></a>
+        <a href="${s.link}" target="_blank"><button>Apply Now</button></a>
+      </div>
+    </div>`;
+  });
+  schemeList.innerHTML=html;
+}
+
+function searchSchemes(){
+  let text=searchInput.value.toLowerCase();
+  let filtered=matchedSchemes.filter(s=>s.name.toLowerCase().includes(text));
+  renderSchemes(filtered);
+}
+
+function filterSchemes(){
+  let type=typeFilter.value;
+  let filtered=matchedSchemes.filter(s=>type===""||s.type===type);
+  renderSchemes(filtered);
+}
+
+function goBack(){
+  resultBox.classList.add("hidden");
+  profileBox.classList.remove("hidden");
+}
+
+function changeLang(){
+  currentLang=langSelect.value;
+  renderSchemes(matchedSchemes);
+}
+</script>
+</body>
+</html>
